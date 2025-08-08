@@ -1,0 +1,142 @@
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/1nig1htmare1234/SCRIPTS/refs/heads/main/Orion.lua')))()
+local Window = OrionLib:MakeWindow({
+        Name = "Quantum SAB",
+        HidePremium = false,
+        SaveConfig = false,
+        IntroText = "Quantum SAB - BETA by nytheron"
+})
+
+local PlayerTab = Window:MakeTab({
+    Name = "Local",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false,
+})
+
+local Section = PlayerTab:AddSection({
+    Name = "Local Player"
+})
+
+-- // SpeedHack \\ --
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HRP = Character:WaitForChild("HumanoidRootPart")
+local Humanoid = Character:WaitForChild("Humanoid")
+
+local SpeedhackEnabled = false
+local SpeedMultiplier = 1.2 -- default 1.2x
+
+PlayerTab:AddLabel("Press T to toggle Speedhack")
+
+local speedToggle = PlayerTab:AddToggle({
+    Name = "Toggle Speedhack",
+    Default = false,
+    Callback = function(Value)
+        SpeedhackEnabled = Value
+        OrionLib:MakeNotification({
+            Name = "Speedhack",
+            Content = SpeedhackEnabled and "Speedhack enabled" or "Speedhack disabled",
+            Duration = 3,
+            Image = "rbxassetid://4483345998"
+        })
+    end
+})
+
+local speedSlider = PlayerTab:AddSlider({
+    Name = "Speed Multiplier",
+    Min = 1,
+    Max = 1.3,
+    Default = SpeedMultiplier,
+    Increment = 0.05,
+    ValueName = "x",
+    Callback = function(Value)
+        SpeedMultiplier = Value
+    end
+})
+
+local function getMoveDirection()
+    local moveDir = Humanoid.MoveDirection
+    if moveDir.Magnitude > 0 then
+        return moveDir.Unit
+    end
+    return nil
+end
+
+-- // T to toggle \\ --
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.T then
+        SpeedhackEnabled = not SpeedhackEnabled
+        speedToggle:Set(SpeedhackEnabled)
+    end
+end)
+
+-- // Movement \\ --
+RunService.RenderStepped:Connect(function(dt)
+    if SpeedhackEnabled and Humanoid.MoveDirection.Magnitude > 0 then
+        local moveDir = getMoveDirection()
+        if moveDir then
+            local speed = Humanoid.WalkSpeed * (SpeedMultiplier - 1)
+            HRP.CFrame = HRP.CFrame + (moveDir * speed * dt)
+        end
+    end
+end)
+
+-- Auto-Fix on Respawn
+LocalPlayer.CharacterAdded:Connect(function(char)
+    Character = char
+    HRP = char:WaitForChild("HumanoidRootPart")
+    Humanoid = char:WaitForChild("Humanoid")
+end)
+
+local function noclipModel(model, state)
+    for _, part in ipairs(model:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = not state
+        end
+    end
+end
+
+local function SetNoclipMode(character, enable)
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = not enable
+        end
+    end
+end
+
+PlayerTab:AddToggle({
+	Name = "Noclip",
+	Default = false,
+	Callback = function(Value)
+ noclipEnabled = Value
+        local character = player.Character or player.CharacterAdded:Wait()
+        
+        if Value then
+            SetNoclipMode(character, true)
+            noclipConnection = RunService.Stepped:Connect(function()
+                if noclipEnabled and character then
+                    SetNoclipMode(character, true)
+                end
+            end)
+        else
+            if noclipConnection then
+                noclipConnection:Disconnect()
+            end
+            SetNoclipMode(character, false)
+        end
+	end    
+})
+
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    if noclipEnabled then
+        SetNoclipMode(true)
+    end
+end)
+
+end
